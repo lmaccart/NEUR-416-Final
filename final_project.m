@@ -17,23 +17,24 @@ eta = 0.001;                         % learning rate
 % Lateral inhibition parameters
 sigma_E = 1;
 sigma_I = 4;
+g_E     = 0.6;
+g_I     = 0.7;
 
 % 16 evenly spaced orientations from 0 to 180 (excluding 180)
 orientations = linspace(0, 180, nOrientations + 1);
 orientations = orientations(1:end-1);  % [0, 11.25, 22.5, ..., 168.75]
 
 %% ==================== LATERAL INHIBITION MATRIX ====================
-M = zeros(nOutputs);
+% Build distance matrix, then compute M using the rubric formula
+dist = zeros(nOutputs);
 for a = 1:nOutputs
     for b = 1:nOutputs
-        if a ~= b
-            dist = min(abs(a - b), nOutputs - abs(a - b));  % circular distance
-            % Mexican hat lateral inhibition (Ricker wavelet)
-            % Short-range excitation minus broad inhibition
-            M(a,b) = exp(-dist^2 / (2 * sigma_E^2)) - exp(-dist^2 / (2 * sigma_I^2));
-        end
+        dist(a,b) = min(abs(a - b), nOutputs - abs(a - b));  % circular distance
     end
 end
+M = g_E * exp(-dist.^2 / (2 * sigma_E^2)) - g_I * exp(-dist.^2 / (2 * sigma_I^2));
+% No self-connection
+M(logical(eye(nOutputs))) = 0;
 
 %% ==================== INITIALIZE WEIGHTS ====================
 W = randn(nOutputs, nInputs) * 0.01;
