@@ -12,7 +12,9 @@ train_orientations = train_data.orientations;
 
 test_data = load('test_gratings.mat');
 test_gratings = test_data.images;
-test_orientations = test_data.orientations;
+
+psych_data = load('psychometric_gratings.mat');
+psych_gratings = psych_data.images;
 
 %% ==================== PARAMETERS ====================
 imgSz = size(train_gratings, 2);                          % image size (16x16 pixels)
@@ -100,21 +102,31 @@ sgtitle('Learned Receptive Fields');
 
 %% ==================== TESTING: TUNING CURVES ====================
 fprintf('Computing tuning curves...\n');
-testAngles = numel(unique(test_orientations));
-nTestTrials = size();            % repetitions per angle for noise averaging
-meanResponses = zeros(nOutputs, length(testAngles));
+nTestAngles = size(test_gratings, 1);
+testAngles = 1:nTestAngles;
+nTestTrials = size(test_gratings, 2);            % repetitions per angle for noise averaging
+meanResponses = zeros(nOutputs, nTestAngles);
 
-for ai = 1:length(testAngles)
-    theta = testAngles(ai);
+for theta = 0:nTestAngles-1
     responses = zeros(nOutputs, nTestTrials);
     for trial = 1:nTestTrials
-        stim = generate_grating(theta, imgSz, K, noiseSD);
+        stim = squeeze(test_gratings(theta+1, trial, :, :));
+
+        % % Optionally display gratings to double-check
+        % if trial == 1
+        %     figure;
+        %     imshow(stim, []);
+        %     title(sprintf('Trial %d — %.1f°', t, theta));
+        %     drawnow;
+        %     waitfor(gcf);
+        % end
+
         u = stim(:);
         v = max(0, W * u);
         v = max(0, v + M * v);
         responses(:, trial) = v;
     end
-    meanResponses(:, ai) = mean(responses, 2);
+    meanResponses(:, theta+1) = mean(responses, 2);
 end
 
 % Fit Gaussian to each neuron's tuning curve
@@ -178,7 +190,7 @@ sgtitle('Orientation Tuning Curves');
 fprintf('\nComputing psychometric curves...\n');
 refOrients = [0, 30, 60, 90, 120, 150];  % reference orientations
 deltaRange = -25:1:25;                    % test offsets in degrees
-nPsychTrials = 30;                        % trials per comparison
+nPsychTrials = size(psych_gratings, 4);                        % trials per comparison
 
 % Store psychometric data
 psychData = zeros(length(refOrients), length(deltaRange));
@@ -194,19 +206,21 @@ for ri = 1:length(refOrients)
         nHigher = 0;
         for trial = 1:nPsychTrials
             % Generate and decode reference stimulus
-            stimRef = generate_grating(refTheta, imgSz, K, noiseSD);
+            stimRef = squeeze(psych_gratings(ri, di, 1, trial, :, :));
+            % stimRef = generate_grating(refTheta, imgSz, K, noiseSD);
             uRef = stimRef(:);
             vRef = max(0, W * uRef);
             vRef = max(0, vRef + M * vRef);
 
             % Population vector decoding for reference
             thetaDecRef = 0.5 * atan2(sum(vRef .* sin((pi/180) * (2 * prefOrient))), ...
-                                       sum(vRef .* cos((pi/180) * (2 * prefOrient))));
+                                      sum(vRef .* cos((pi/180) * (2 * prefOrient))));
             thetaDecRef = (180/pi) * (thetaDecRef);
             if thetaDecRef < 0; thetaDecRef = thetaDecRef + 180; end
 
             % Generate and decode test stimulus
-            stimTest = generate_grating(testTheta, imgSz, K, noiseSD);
+            % stimTest = generate_grating(testTheta, imgSz, K, noiseSD);
+            stimTest = squeeze(psych_gratings(ri, di, 2, trial, :, :));
             uTest = stimTest(:);
             vTest = max(0, W * uTest);
             vTest = max(0, vTest + M * vTest);
