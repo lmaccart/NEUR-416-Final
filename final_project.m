@@ -6,6 +6,8 @@ clear; close all; clc;
 
 
 % Read in .mat file containing gratings created by Python script
+% Data files are not included in Git repo. Run generate_grating.ipynb
+% before final_project.m to generate all data files.
 train_data = load('train_gratings.mat');
 train_gratings = train_data.images;
 train_orientations = train_data.orientations;
