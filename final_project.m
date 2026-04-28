@@ -3,26 +3,31 @@
 % trained with subtractive normalization (Hebbian learning).
 clear; close all; clc;
 
+
+
+% Read in .mat file containing gratings created by Python script
+train_data = load('train_gratings.mat');
+train_gratings = train_data.images;
+train_orientations = train_data.orientations;
+
+test_data = load('test_gratings.mat');
+test_gratings = test_data.images;
+test_orientations = test_data.orientations;
+
 %% ==================== PARAMETERS ====================
-imgSz = 16;                          % image size (16x16 pixels)
-nInputs = imgSz^2;                   % 256 input neurons
-nOutputs = 32;                       % 32 output neurons
-nOrientations = 16;                  % number of training orientations
-nTrials = 40000;                     % training trials
-cyclesPerImage = 3;                  % spatial frequency
-K = 2 * pi * cyclesPerImage / 2;     % spatial freq for coords in [-1,1] (span=2)
-noiseSD = 0.05;                      % noise standard deviation
-eta = 0.001;                         % learning rate
+imgSz = size(train_gratings, 2);                          % image size (16x16 pixels)
+nInputs = size(train_gratings, 2) * size(train_gratings, 3);    % 256 input neurons
+nOrientations = numel(unique(train_orientations));        % number of training orientations
+nOutputs = 32;                                      % 32 output neurons
+nTrials = size(train_gratings, 1);                        % training trials
+cyclesPerImage = 3;                                 % spatial frequency
+eta = 0.001;                                        % learning rate
 
 % Lateral inhibition parameters
 sigma_E = 1;
 sigma_I = 4;
 g_E     = 0.6;
 g_I     = 0.7;
-
-% 16 evenly spaced orientations from 0 to 180 (excluding 180)
-orientations = linspace(0, 180, nOrientations + 1);
-orientations = orientations(1:end-1);  % [0, 11.25, 22.5, ..., 168.75]
 
 %% ==================== LATERAL INHIBITION MATRIX ====================
 % Build distance matrix, then compute M using the rubric formula
@@ -42,12 +47,18 @@ W = randn(nOutputs, nInputs) * 0.01;
 %% ==================== TRAINING ====================
 fprintf('Training for %d trials...\n', nTrials);
 for t = 1:nTrials
-    % Pick a random orientation
-    idx = randi(nOrientations);
-    theta = orientations(idx);
 
-    % Generate stimulus
-    stim = generate_grating(theta, imgSz, K, noiseSD);
+    % Gather stimulus
+    theta = train_orientations(t);
+    stim = squeeze(train_gratings(t,:,:));
+
+    % % Optionally display gratings to double-check
+    % figure;
+    % imshow(stim, []);
+    % title(sprintf('Trial %d — %.1f°', t, theta));
+    % drawnow;
+    % waitfor(gcf);
+
     u = stim(:);  % flatten to 256x1
 
     % Feedforward: threshold-linear activation
@@ -89,8 +100,8 @@ sgtitle('Learned Receptive Fields');
 
 %% ==================== TESTING: TUNING CURVES ====================
 fprintf('Computing tuning curves...\n');
-testAngles = 0:179;          % 1-degree steps
-nTestTrials = 30;            % repetitions per angle for noise averaging
+testAngles = numel(unique(test_orientations));
+nTestTrials = size();            % repetitions per angle for noise averaging
 meanResponses = zeros(nOutputs, length(testAngles));
 
 for ai = 1:length(testAngles)
