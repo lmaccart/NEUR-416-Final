@@ -27,6 +27,21 @@ nTrials = size(train_gratings, 1);                        % training trials
 cyclesPerImage = 3;                                 % spatial frequency
 eta = 0.001;                                        % learning rate
 
+% Added seed to make sure the results are reproducible
+rngSeed = 416;
+if isempty(rngSeed)
+    rng('shuffle');
+else
+    rng(rngSeed);
+end
+
+% Input assertions
+assert(ndims(train_gratings) == 3, 'train_gratings have dim 3');
+assert(all(size(train_gratings, 2:3) == [16, 16]), 'train_gratings must be size [N x 16 x 16]');
+assert(size(train_gratings, 1) == 40000, 'train_gratings must contain exactly 40,000 trials.');
+assert(numel(train_orientations) == size(train_gratings, 1), ...
+       'train_orientations length must match number of training trials.');
+
 % Lateral inhibition parameters
 sigma_E = 1;
 sigma_I = 4;
