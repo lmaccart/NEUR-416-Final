@@ -321,9 +321,3 @@ for ri = 1:length(refOrients)
 end
 
 fprintf('\nAll done!\n');
-
-
-% To check;
-figure;
-histogram(prefOrient, 18);
-title('Distribution of preferred orientations');
