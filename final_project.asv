@@ -3,6 +3,8 @@
 % trained with subtractive normalization (Hebbian learning).
 clear; close all; clc;
 
+
+
 % Read in .mat file containing gratings created by Python script
 % Data files are not included in Git repo. Run generate_grating.ipynb
 % before final_project.m to generate all data files.
@@ -26,7 +28,7 @@ cyclesPerImage = 3;                                 % spatial frequency
 eta = 0.001;                                        % learning rate
 
 % Added seed to make sure the results are reproducible
-rngSeed = 100;
+rngSeed = 80;
 if isempty(rngSeed)
     rng('shuffle');
 else
@@ -118,8 +120,8 @@ sgtitle('Learned Receptive Fields');
 %% ==================== TESTING: TUNING CURVES ====================
 fprintf('Computing tuning curves...\n');
 nTestAngles = size(test_gratings, 1);
-testAngles = 0:nTestAngles-1; % Test angles from 0 to 179 
-nTestTrials = size(test_gratings, 2);            % Repetitions per angle for noise averaging
+testAngles = 1:nTestAngles;
+nTestTrials = size(test_gratings, 2);            % repetitions per angle for noise averaging
 meanResponses = zeros(nOutputs, nTestAngles);
 
 for theta = 0:nTestAngles-1
