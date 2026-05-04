@@ -4,7 +4,7 @@
 clear; close all; clc;
 
 % Read in .mat file containing gratings created by Python script
-% Data files are not included in Git repo. Run generate_grating.ipynb
+% Data files are now included in Git repo. Run generate_grating.ipynb
 % before final_project.m to generate all data files.
 train_data = load('train_gratings.mat');
 train_gratings = train_data.images;
@@ -54,19 +54,19 @@ for a = 1:nOutputs
         dist(a,b) = min(abs(a - b), nOutputs - abs(a - b));  % circular distance
     end
 end
-M = g_E * exp(-dist.^2 / (2 * sigma_E^2)) - g_I * exp(-dist.^2 / (2 * sigma_I^2));
+M = g_E * exp(-(dist.^2) / (2 * sigma_E^2)) - g_I * exp(-(dist.^2) / (2 * sigma_I^2));
 % No self-connection
 M(logical(eye(nOutputs))) = 0;
 
 %% ==================== INITIALIZE WEIGHTS ====================
 W = randn(nOutputs, nInputs) * 0.01;
-
+save('weight_initial.mat', 'W')
 %% ==================== TRAINING ====================
 fprintf('Training for %d trials...\n', nTrials);
 for t = 1:nTrials
 
     % Gather stimulus
-    theta = train_orientations(t);
+    % theta = train_orientations(t);
     stim = squeeze(train_gratings(t,:,:));
 
     % % Optionally display gratings to double-check
@@ -106,6 +106,7 @@ end
 fprintf('Training complete.\n\n');
 
 %% ==================== VERIFICATION: PLOT RECEPTIVE FIELDS ====================
+save('weight_final.mat', 'W')
 figure('Name', 'Learned Receptive Fields');
 for a = 1:nOutputs
     subplot(4, 8, a);
@@ -203,9 +204,9 @@ sgtitle('Orientation Tuning Curves');
 
 %% ==================== PSYCHOMETRIC CURVES & JND ====================
 fprintf('\nComputing psychometric curves...\n');
-refOrients = [0, 30, 60, 90, 120, 150];  % reference orientations
+refOrients = [0, 30, 60, 90, 120, 150];   % reference orientations
 deltaRange = -25:1:25;                    % test offsets in degrees
-nPsychTrials = size(psych_gratings, 4);                        % trials per comparison
+nPsychTrials = size(psych_gratings, 4);   % trials per comparison
 
 % Store psychometric data
 psychData = zeros(length(refOrients), length(deltaRange));
@@ -216,7 +217,7 @@ for ri = 1:length(refOrients)
 
     for di = 1:length(deltaRange)
         delta = deltaRange(di);
-        testTheta = mod(refTheta + delta, 180);
+        % testTheta = mod(refTheta + delta, 180);
 
         nHigher = 0;
         for trial = 1:nPsychTrials
@@ -232,7 +233,7 @@ for ri = 1:length(refOrients)
                                       sum(vRef .* cos((pi/180) * (2 * prefOrient))));
             thetaDecRef = (180/pi) * (thetaDecRef);
             if thetaDecRef < 0; thetaDecRef = thetaDecRef + 180; end
-
+            
             % Generate and decode test stimulus
             % stimTest = generate_grating(testTheta, imgSz, K, noiseSD);
             stimTest = squeeze(psych_gratings(ri, di, 2, trial, :, :));
